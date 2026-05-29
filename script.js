@@ -1,263 +1,629 @@
-const noNav = ['login', 'onboarding', 'restrictions', 'diagnosis', 'loading'];
-const navMap = {
-  home: 0,
-  training: 1,
-  todayTraining: 1,
-  nutrition: 2,
-  nutritionChecklist: 2,
-  shop: 3,
-  product: 3,
-  profile: 4,
-  history: 0
+/* THE ATHLETIC CLUB — APP FUNCTIONAL SCRIPT */
+
+const STORAGE_KEY = "tac_app_state_v1";
+
+const defaultState = {
+  theme: "dark",
+  currentScreen: "login",
+  onboarding: {
+    focus: "Musculação",
+    objective: "Performance",
+    level: "Intermediário",
+    frequency: "4x semana",
+    time: "60 min"
+  },
+  workout: {
+    completedSets: [],
+    saved: false,
+    finished: false
+  },
+  nutrition: {
+    checklist: {
+      breakfast: true,
+      lunch: true,
+      preworkout: false,
+      dinner: false,
+      water: false
+    }
+  },
+  shop: {
+    wishlist: []
+  }
 };
 
-const workoutBlocks = [
-  {
-    number: '01',
-    title: 'Aquecimento',
-    meta: 'Ativação geral · 8 min',
-    time: 480,
-    label: 'timer',
-    exercises: [
-      { name: 'Bike / Remo leve', desc: 'Subir temperatura sem fadigar.', badge: '5 min', sets: 1 },
-      { name: 'Mobilidade de quadril', desc: 'Dinâmica e controlada.', badge: '3 min', sets: 1 }
-    ]
-  },
-  {
-    number: '02',
-    title: 'Força principal',
-    meta: 'Carga moderada · descanso controlado',
-    time: 1500,
-    label: 'bloco',
-    exercises: [
-      { name: 'Agachamento livre', desc: '4 séries · 5 reps · potência e técnica.', badge: '4x5', sets: 4 },
-      { name: 'Terra romeno', desc: '3 séries · 8 reps · posterior e estabilidade.', badge: '3x8', sets: 3 }
-    ]
-  },
-  {
-    number: '03',
-    title: 'Acessórios',
-    meta: 'Controle · volume · core',
-    time: 900,
-    label: 'bloco',
-    exercises: [
-      { name: 'Avanço alternado', desc: '3 séries · 10 reps cada lado.', badge: '3x10', sets: 3 },
-      { name: 'Prancha frontal', desc: '3 séries · 40 segundos.', badge: '3x40s', sets: 3 }
-    ]
-  },
-  {
-    number: '04',
-    title: 'Volta à calma',
-    meta: 'Respiração + mobilidade final',
-    time: 420,
-    label: 'final',
-    exercises: [
-      { name: 'Mobilidade final', desc: 'Quadril, tornozelo e lombar.', badge: '4 min', sets: 1 },
-      { name: 'Respiração nasal', desc: 'Baixar frequência e finalizar.', badge: '3 min', sets: 1 }
-    ]
-  }
+let state = loadState();
+let timers = {};
+
+const noNavScreens = [
+  "login",
+  "onboarding",
+  "restrictions",
+  "diagnosis",
+  "loading"
 ];
 
-function formatTime(sec) {
-  const m = String(Math.floor(sec / 60)).padStart(2, '0');
-  const s = String(sec % 60).padStart(2, '0');
-  return `${m}:${s}`;
-}
+const navMap = {
+  home: 0,
+  history: 0,
 
-function renderWorkoutBlocks() {
-  const root = document.getElementById('workoutBlocks');
-  if (!root) return;
+  training: 1,
+  todayTraining: 1,
 
-  root.innerHTML = workoutBlocks.map((block) => `
-    <div class="glass workout-block">
-      <div class="inner">
-        <div class="block-header">
-          <div>
-            <div class="label">Bloco ${block.number}</div>
-            <div class="block-title">${block.title}</div>
-            <div class="block-meta">${block.meta}</div>
-          </div>
-          <div class="timer">
-            <strong class="timer-display" data-time="${block.time}">${formatTime(block.time)}</strong>
-            <span>${block.label}</span>
-            <div class="timer-actions">
-              <button class="mini-btn start-timer">Start</button>
-              <button class="mini-btn reset-timer">Reset</button>
-            </div>
-          </div>
-        </div>
-        <div class="exercise-list">
-          ${block.exercises.map((exercise) => `
-            <div class="exercise">
-              <div class="exercise-top">
-                <div>
-                  <div class="exercise-name">${exercise.name}</div>
-                  <div class="exercise-desc">${exercise.desc}</div>
-                </div>
-                <div class="badge">${exercise.badge}</div>
-              </div>
-              <div class="sets">
-                ${Array.from({ length: exercise.sets }).map((_, index) => `<button class="set"><span>${index + 1}</span></button>`).join('')}
-              </div>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-    </div>
-  `).join('');
+  nutrition: 2,
+  nutritionChecklist: 2,
 
-  bindSets();
+  shop: 3,
+  product: 3,
+
+  profile: 4
+};
+
+/* INIT */
+
+document.addEventListener("DOMContentLoaded", () => {
+  applyTheme();
+  bindGlobalClicks();
+  bindNavigation();
+  bindOnboarding();
+  bindWorkout();
   bindTimers();
-  updateProgress();
+  bindNutrition();
+  bindShop();
+  restoreWorkoutProgress();
+
+  goTo(state.currentScreen || "login");
+});
+
+/* STATE */
+
+function loadState() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved ? { ...defaultState, ...JSON.parse(saved) } : structuredClone(defaultState);
+  } catch {
+    return structuredClone(defaultState);
+  }
 }
+
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function resetState() {
+  localStorage.removeItem(STORAGE_KEY);
+  state = structuredClone(defaultState);
+  applyTheme();
+  restoreWorkoutProgress();
+  goTo("login");
+  showToast("App reiniciado.");
+}
+
+/* NAVIGATION */
 
 function goTo(id, navButton = null) {
-  document.querySelectorAll('.screen').forEach((screen) => screen.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+  const target = document.getElementById(id);
 
-  document.body.classList.toggle('hide-nav', noNav.includes(id));
-  document.body.classList.toggle('workout-mode', id === 'todayTraining');
-
-  document.querySelectorAll('.nav button').forEach((button) => button.classList.remove('active'));
-
-  if (navButton) {
-    navButton.classList.add('active');
-  } else if (navMap[id] !== undefined) {
-    document.querySelectorAll('.nav button')[navMap[id]].classList.add('active');
+  if (!target) {
+    console.warn(`Tela não encontrada: ${id}`);
+    return;
   }
 
-  const activeScreen = document.querySelector('.screen.active');
-  if (activeScreen) activeScreen.scrollTop = 0;
+  document.querySelectorAll(".screen").forEach(screen => {
+    screen.classList.remove("active");
+  });
 
-  localStorage.setItem('tac:lastScreen', id);
+  target.classList.add("active");
+
+  document.body.classList.toggle("hide-nav", noNavScreens.includes(id));
+  document.body.classList.toggle("workout-mode", id === "todayTraining");
+
+  updateNavState(id, navButton);
+
+  state.currentScreen = id;
+  saveState();
+
+  target.scrollTop = 0;
   updateProgress();
 }
 
+function updateNavState(id, navButton) {
+  const navButtons = document.querySelectorAll(".nav button");
+
+  navButtons.forEach(button => {
+    button.classList.remove("active");
+  });
+
+  if (navButton) {
+    navButton.classList.add("active");
+    return;
+  }
+
+  if (navMap[id] !== undefined && navButtons[navMap[id]]) {
+    navButtons[navMap[id]].classList.add("active");
+  }
+}
+
+function bindNavigation() {
+  document.querySelectorAll("[data-screen]").forEach(element => {
+    element.addEventListener("click", () => {
+      goTo(element.dataset.screen);
+    });
+  });
+}
+
+/* THEME */
+
 function toggleTheme() {
-  document.body.classList.toggle('light');
-  localStorage.setItem('tac:theme', document.body.classList.contains('light') ? 'light' : 'dark');
+  state.theme = state.theme === "light" ? "dark" : "light";
+  applyTheme();
+  saveState();
 }
 
-function selectOption(el) {
-  document.querySelectorAll('#onboarding .option').forEach((option) => option.classList.remove('active'));
-  el.classList.add('active');
+function applyTheme() {
+  document.body.classList.toggle("light", state.theme === "light");
 }
 
-function showToast(message) {
-  const toast = document.getElementById('toast');
-  toast.textContent = message;
-  toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), 1700);
+/* GLOBAL BUTTONS */
+
+function bindGlobalClicks() {
+  window.goTo = goTo;
+  window.toggleTheme = toggleTheme;
+  window.selectOption = selectOption;
+  window.saveWorkout = saveWorkout;
+  window.finishWorkout = finishWorkout;
+  window.resetState = resetState;
+
+  document.querySelectorAll(".theme").forEach(button => {
+    button.addEventListener("click", toggleTheme);
+  });
+
+  document.querySelectorAll(".btn, .list-item, .product, .option").forEach(element => {
+    element.addEventListener("touchstart", () => {}, { passive: true });
+  });
+
+  bindTextButtons();
 }
 
-function bindSets() {
-  document.querySelectorAll('.set').forEach((button) => {
-    button.addEventListener('click', () => {
-      button.classList.toggle('done');
-      saveSetState();
+function bindTextButtons() {
+  document.querySelectorAll("button, .list-item").forEach(element => {
+    const text = normalizeText(element.textContent);
+
+    if (text.includes("entrar") || text.includes("criar conta")) {
+      element.addEventListener("click", () => {
+        if (document.getElementById("login")?.classList.contains("active")) {
+          goTo("onboarding");
+        }
+      });
+    }
+
+    if (text.includes("continuar")) {
+      element.addEventListener("click", () => {
+        if (document.getElementById("onboarding")?.classList.contains("active")) {
+          goTo("restrictions");
+        }
+      });
+    }
+
+    if (text.includes("ver diagnostico")) {
+      element.addEventListener("click", () => goTo("diagnosis"));
+    }
+
+    if (text.includes("gerar plano")) {
+      element.addEventListener("click", () => {
+        goTo("loading");
+
+        setTimeout(() => {
+          goTo("home");
+          showToast("Plano gerado.");
+        }, 900);
+      });
+    }
+
+    if (text.includes("editar dados")) {
+      element.addEventListener("click", () => goTo("onboarding"));
+    }
+
+    if (text.includes("sair")) {
+      element.addEventListener("click", () => goTo("login"));
+    }
+  });
+}
+
+/* ONBOARDING */
+
+function bindOnboarding() {
+  document.querySelectorAll("#onboarding .option").forEach(option => {
+    option.addEventListener("click", () => {
+      selectOption(option);
+
+      const title = option.querySelector(".option-title")?.textContent?.trim();
+
+      if (title) {
+        state.onboarding.focus = title;
+        updateUserFocusText();
+        saveState();
+      }
+    });
+  });
+
+  updateUserFocusText();
+}
+
+function selectOption(element) {
+  const parentScreen = element.closest(".screen");
+
+  if (!parentScreen) return;
+
+  parentScreen.querySelectorAll(".option").forEach(option => {
+    option.classList.remove("active");
+  });
+
+  element.classList.add("active");
+}
+
+function updateUserFocusText() {
+  document.querySelectorAll(".list-item").forEach(item => {
+    const strong = item.querySelector("strong");
+    const span = item.querySelector("span");
+
+    if (!strong || !span) return;
+
+    const label = normalizeText(strong.textContent);
+
+    if (label === "foco") {
+      span.textContent = state.onboarding.focus;
+    }
+
+    if (label === "objetivo") {
+      span.textContent = state.onboarding.objective;
+    }
+  });
+}
+
+/* WORKOUT */
+
+function bindWorkout() {
+  document.querySelectorAll(".set").forEach((button, index) => {
+    button.dataset.setId = button.dataset.setId || `set_${index + 1}`;
+
+    button.addEventListener("click", () => {
+      const setId = button.dataset.setId;
+
+      button.classList.toggle("done");
+
+      if (button.classList.contains("done")) {
+        if (!state.workout.completedSets.includes(setId)) {
+          state.workout.completedSets.push(setId);
+        }
+      } else {
+        state.workout.completedSets = state.workout.completedSets.filter(id => id !== setId);
+      }
+
+      state.workout.finished = false;
+      saveState();
       updateProgress();
     });
   });
-  loadSetState();
+
+  updateProgress();
 }
 
-function saveSetState() {
-  const states = Array.from(document.querySelectorAll('.set')).map((button) => button.classList.contains('done'));
-  localStorage.setItem('tac:sets', JSON.stringify(states));
-}
+function restoreWorkoutProgress() {
+  document.querySelectorAll(".set").forEach((button, index) => {
+    button.dataset.setId = button.dataset.setId || `set_${index + 1}`;
 
-function loadSetState() {
-  const raw = localStorage.getItem('tac:sets');
-  if (!raw) return;
-  try {
-    const states = JSON.parse(raw);
-    document.querySelectorAll('.set').forEach((button, index) => {
-      button.classList.toggle('done', Boolean(states[index]));
-    });
-  } catch (_) {}
+    if (state.workout.completedSets.includes(button.dataset.setId)) {
+      button.classList.add("done");
+    } else {
+      button.classList.remove("done");
+    }
+  });
+
+  updateProgress();
 }
 
 function updateProgress() {
-  const sets = document.querySelectorAll('.set');
-  const total = sets.length || 1;
-  const done = document.querySelectorAll('.set.done').length;
-  const pct = Math.round((done / total) * 100);
+  const setButtons = document.querySelectorAll(".set");
+  const totalSets = setButtons.length;
+  const completedSets = document.querySelectorAll(".set.done").length;
+  const percentage = totalSets ? Math.round((completedSets / totalSets) * 100) : 0;
 
-  const progressText = document.getElementById('progressText');
-  const progressBar = document.getElementById('progressBar');
-  const heroPercent = document.getElementById('heroPercent');
-  const heroRing = document.getElementById('heroRing');
+  const progressText = document.getElementById("progressText");
+  const progressBar = document.getElementById("progressBar");
+  const heroPercent = document.getElementById("heroPercent");
+  const heroRing = document.getElementById("heroRing");
 
-  if (progressText) progressText.textContent = `${done} de ${total} séries concluídas`;
-  if (progressBar) progressBar.style.width = `${pct}%`;
-  if (heroPercent) heroPercent.textContent = `${pct}%`;
-  if (heroRing) heroRing.style.setProperty('--progress', pct);
+  if (progressText) {
+    progressText.textContent = `${completedSets} de ${totalSets} séries concluídas`;
+  }
+
+  if (progressBar) {
+    progressBar.style.width = `${percentage}%`;
+  }
+
+  if (heroPercent) {
+    heroPercent.textContent = `${percentage}%`;
+  }
+
+  if (heroRing) {
+    heroRing.style.setProperty("--progress", percentage);
+  }
+
+  updateHomeWorkoutMetric(completedSets, totalSets);
 }
 
-function bindTimers() {
-  document.querySelectorAll('.timer').forEach((box) => {
-    const display = box.querySelector('.timer-display');
-    const start = box.querySelector('.start-timer');
-    const reset = box.querySelector('.reset-timer');
-    const initial = Number(display.dataset.time);
-    let remaining = initial;
-    let timer = null;
-    let running = false;
+function updateHomeWorkoutMetric(done, total) {
+  const percentage = total ? Math.round((done / total) * 100) : 0;
 
-    display.textContent = formatTime(remaining);
+  document.querySelectorAll(".metric").forEach(metric => {
+    const label = metric.querySelector(".label");
+    const value = metric.querySelector(".value");
 
-    start.addEventListener('click', () => {
-      if (!running) {
-        running = true;
-        start.textContent = 'Pause';
-        timer = setInterval(() => {
-          if (remaining > 0) {
-            remaining--;
-            display.textContent = formatTime(remaining);
-          } else {
-            clearInterval(timer);
-            running = false;
-            start.textContent = 'Start';
-            showToast('Timer concluído.');
-          }
-        }, 1000);
-      } else {
-        clearInterval(timer);
-        running = false;
-        start.textContent = 'Start';
-      }
-    });
+    if (!label || !value) return;
 
-    reset.addEventListener('click', () => {
-      clearInterval(timer);
-      running = false;
-      remaining = initial;
-      display.textContent = formatTime(remaining);
-      start.textContent = 'Start';
-    });
+    if (normalizeText(label.textContent) === "treinos") {
+      value.textContent = percentage >= 100 ? "1/1" : `${done}/${total}`;
+    }
   });
 }
 
 function saveWorkout() {
-  saveSetState();
-  showToast('Registro salvo.');
+  state.workout.saved = true;
+  saveState();
+  showToast("Registro salvo.");
 }
 
 function finishWorkout() {
-  const total = document.querySelectorAll('.set').length;
-  const done = document.querySelectorAll('.set.done').length;
-  if (done < total) {
-    showToast('Ainda há séries pendentes.');
+  const totalSets = document.querySelectorAll(".set").length;
+  const completedSets = document.querySelectorAll(".set.done").length;
+
+  if (completedSets < totalSets) {
+    showToast("Ainda há séries pendentes.");
     return;
   }
-  showToast('Treino finalizado.');
-  setTimeout(() => goTo('home'), 900);
+
+  state.workout.saved = true;
+  state.workout.finished = true;
+  saveState();
+
+  showToast("Treino finalizado.");
+
+  setTimeout(() => {
+    goTo("home");
+  }, 900);
 }
 
-function boot() {
-  renderWorkoutBlocks();
-  const theme = localStorage.getItem('tac:theme');
-  if (theme === 'light') document.body.classList.add('light');
+/* TIMERS */
+
+function bindTimers() {
+  document.querySelectorAll(".timer").forEach((timerBox, index) => {
+    const display = timerBox.querySelector(".timer-display");
+    const startButton = timerBox.querySelector(".start-timer");
+    const resetButton = timerBox.querySelector(".reset-timer");
+
+    if (!display || !startButton || !resetButton) return;
+
+    const timerId = `timer_${index + 1}`;
+    const initial = Number(display.dataset.time || 0);
+
+    timers[timerId] = {
+      initial,
+      remaining: initial,
+      interval: null,
+      running: false,
+      display,
+      startButton
+    };
+
+    display.textContent = formatTime(initial);
+
+    startButton.addEventListener("click", () => {
+      toggleTimer(timerId);
+    });
+
+    resetButton.addEventListener("click", () => {
+      resetTimer(timerId);
+    });
+  });
 }
 
-boot();
+function toggleTimer(timerId) {
+  const timer = timers[timerId];
+
+  if (!timer) return;
+
+  if (!timer.running) {
+    timer.running = true;
+    timer.startButton.textContent = "Pause";
+
+    timer.interval = setInterval(() => {
+      if (timer.remaining > 0) {
+        timer.remaining--;
+        timer.display.textContent = formatTime(timer.remaining);
+      } else {
+        clearInterval(timer.interval);
+        timer.running = false;
+        timer.startButton.textContent = "Start";
+        showToast("Timer concluído.");
+      }
+    }, 1000);
+
+    return;
+  }
+
+  clearInterval(timer.interval);
+  timer.running = false;
+  timer.startButton.textContent = "Start";
+}
+
+function resetTimer(timerId) {
+  const timer = timers[timerId];
+
+  if (!timer) return;
+
+  clearInterval(timer.interval);
+  timer.running = false;
+  timer.remaining = timer.initial;
+  timer.display.textContent = formatTime(timer.initial);
+  timer.startButton.textContent = "Start";
+}
+
+function formatTime(seconds) {
+  const minutes = String(Math.floor(seconds / 60)).padStart(2, "0");
+  const secs = String(seconds % 60).padStart(2, "0");
+
+  return `${minutes}:${secs}`;
+}
+
+/* NUTRITION */
+
+function bindNutrition() {
+  const checklistScreen = document.getElementById("nutritionChecklist");
+
+  if (!checklistScreen) return;
+
+  checklistScreen.querySelectorAll(".list-item").forEach((item, index) => {
+    item.dataset.nutritionId = item.dataset.nutritionId || `nutrition_${index + 1}`;
+
+    item.addEventListener("click", () => {
+      toggleNutritionItem(item);
+    });
+  });
+
+  restoreNutritionChecklist();
+}
+
+function toggleNutritionItem(item) {
+  const strong = item.querySelector("strong");
+  const span = item.querySelector("span");
+
+  if (!strong || !span) return;
+
+  const isDone = strong.textContent.trim() === "✓";
+
+  strong.textContent = isDone ? "—" : "✓";
+
+  const id = item.dataset.nutritionId;
+  state.nutrition.checklist[id] = !isDone;
+
+  saveState();
+  updateNutritionMetric();
+}
+
+function restoreNutritionChecklist() {
+  const checklistScreen = document.getElementById("nutritionChecklist");
+
+  if (!checklistScreen) return;
+
+  checklistScreen.querySelectorAll(".list-item").forEach(item => {
+    const strong = item.querySelector("strong");
+    const id = item.dataset.nutritionId;
+
+    if (!strong || !id) return;
+
+    if (state.nutrition.checklist[id]) {
+      strong.textContent = "✓";
+    }
+  });
+
+  updateNutritionMetric();
+}
+
+function updateNutritionMetric() {
+  const values = Object.values(state.nutrition.checklist);
+  const total = values.length || 1;
+  const done = values.filter(Boolean).length;
+  const percentage = Math.round((done / total) * 100);
+
+  document.querySelectorAll(".metric").forEach(metric => {
+    const label = metric.querySelector(".label");
+    const value = metric.querySelector(".value");
+
+    if (!label || !value) return;
+
+    if (normalizeText(label.textContent) === "proteina") {
+      value.textContent = `${percentage}%`;
+    }
+  });
+}
+
+/* SHOP */
+
+function bindShop() {
+  document.querySelectorAll(".product").forEach((product, index) => {
+    product.dataset.productId = product.dataset.productId || `product_${index + 1}`;
+
+    product.addEventListener("click", () => {
+      const title = product.querySelector(".option-title")?.textContent?.trim() || "Produto";
+      state.shop.currentProduct = title;
+      saveState();
+
+      updateProductScreen(title);
+    });
+  });
+
+  document.querySelectorAll(".list-item").forEach(item => {
+    const text = normalizeText(item.textContent);
+
+    if (text.includes("wishlist")) {
+      item.addEventListener("click", () => {
+        const product = state.shop.currentProduct || "Oversized";
+        toggleWishlist(product);
+      });
+    }
+  });
+}
+
+function updateProductScreen(title) {
+  const productScreen = document.getElementById("product");
+
+  if (!productScreen) return;
+
+  const titleElement = productScreen.querySelector(".hero h2, h2");
+
+  if (titleElement) {
+    titleElement.textContent = title;
+  }
+}
+
+function toggleWishlist(product) {
+  if (state.shop.wishlist.includes(product)) {
+    state.shop.wishlist = state.shop.wishlist.filter(item => item !== product);
+    showToast("Removido da wishlist.");
+  } else {
+    state.shop.wishlist.push(product);
+    showToast("Adicionado à wishlist.");
+  }
+
+  saveState();
+}
+
+/* UTIL */
+
+function normalizeText(text) {
+  return String(text || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+}
+
+function showToast(message) {
+  let toast = document.getElementById("toast");
+
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "toast";
+    toast.className = "toast";
+    document.body.appendChild(toast);
+  }
+
+  toast.textContent = message;
+  toast.classList.add("show");
+
+  clearTimeout(showToast.timeout);
+
+  showToast.timeout = setTimeout(() => {
+    toast.classList.remove("show");
+  }, 1700);
+}
