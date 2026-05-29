@@ -1,0 +1,9 @@
+{
+  "name": "the-athletic-club-app",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "vercel dev",
+    "dev": "vercel dev"
+  }
+}

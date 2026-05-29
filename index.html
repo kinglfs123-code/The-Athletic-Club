@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#050505" />
+  <title>The Athletic Club — App</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="dark hide-nav">
+  <main class="app">
+    <div class="phone">
+      <div class="status"><span>9:41</span><span>5G 82%</span></div>
+
+      <section class="screen active" id="login">
+        <div class="top"><div class="brand">TAC</div><button class="theme" onclick="toggleTheme()">Tema</button></div>
+        <h1>The Athletic Club</h1>
+        <p class="subtitle">Performance, treino, nutrição e rotina em uma experiência mobile first.</p>
+        <div class="stack">
+          <div class="input">Email</div><div class="input">Senha</div>
+          <button class="btn" onclick="goTo('onboarding')">Entrar</button>
+          <button class="btn secondary" onclick="goTo('onboarding')">Criar conta</button>
+        </div>
+        <div class="section">Acesso</div>
+        <div class="list">
+          <div class="list-item"><strong>Apple</strong><span>Entrar com Apple</span></div>
+          <div class="list-item"><strong>Google</strong><span>Entrar com Google</span></div>
+          <div class="list-item"><strong>Senha</strong><span>Recuperar acesso</span></div>
+        </div>
+      </section>
+
+      <section class="screen" id="onboarding">
+        <div class="top"><div class="brand">TAC</div><span class="chip">01 / Base</span></div>
+        <h2>Escolha seu foco.</h2><p class="subtitle">Esse é o ponto de partida para a IA montar treino, nutrição e rotina.</p>
+        <div class="stack">
+          <div class="grid-2">
+            <div class="option active" onclick="selectOption(this)"><div class="option-title">Musculação</div><div class="option-small">Força, massa e estrutura.</div></div>
+            <div class="option" onclick="selectOption(this)"><div class="option-title">Jiu-Jitsu</div><div class="option-small">Performance, mobilidade e recuperação.</div></div>
+            <div class="option" onclick="selectOption(this)"><div class="option-title">Corrida</div><div class="option-small">Condicionamento e resistência.</div></div>
+            <div class="option" onclick="selectOption(this)"><div class="option-title">Híbrido</div><div class="option-small">Treino completo e flexível.</div></div>
+          </div>
+          <div class="input">Objetivo <span>Performance</span></div>
+          <div class="input">Nível <span>Intermediário</span></div>
+          <div class="input">Frequência <span>4x semana</span></div>
+          <div class="input">Tempo por treino <span>60 min</span></div>
+          <button class="btn" onclick="goTo('restrictions')">Continuar</button>
+        </div>
+      </section>
+
+      <section class="screen" id="restrictions">
+        <div class="top"><div class="brand">TAC</div><span class="chip">02 / Contexto</span></div>
+        <h2>Contexto real.</h2><p class="subtitle">Antes da IA gerar algo, ela precisa entender limites básicos.</p>
+        <div class="stack">
+          <div class="input">Lesões ou dores <span>Nenhuma</span></div><div class="input">Sono médio <span>7h</span></div>
+          <div class="input">Equipamentos <span>Academia completa</span></div><div class="input">Alimentação <span>Sem restrições</span></div>
+          <div class="input">Rotina <span>Trabalho + treino</span></div>
+          <button class="btn" onclick="goTo('diagnosis')">Ver diagnóstico</button>
+        </div>
+      </section>
+
+      <section class="screen" id="diagnosis">
+        <div class="top"><div class="brand">Diagnóstico</div><span class="chip">Pré-IA</span></div>
+        <h2>Perfil inicial.</h2><p class="subtitle">Resumo do que a IA vai usar para gerar a experiência.</p>
+        <div class="section">Dados principais</div>
+        <div class="list">
+          <div class="list-item"><strong>Foco</strong><span>Jiu-Jitsu + força</span></div><div class="list-item"><strong>Objetivo</strong><span>Performance</span></div>
+          <div class="list-item"><strong>Dias</strong><span>4x por semana</span></div><div class="list-item"><strong>Tempo</strong><span>60 min</span></div>
+          <div class="list-item"><strong>Recuperação</strong><span>Moderada</span></div>
+        </div>
+        <div class="section">Ação</div>
+        <button class="btn" onclick="goTo('loading')">Gerar plano com IA</button>
+        <button class="btn secondary" style="margin-top:12px" onclick="goTo('onboarding')">Editar dados</button>
+      </section>
+
+      <section class="screen" id="loading">
+        <div class="center"><div><div class="loader"></div><h2>Analisando perfil.</h2><p class="subtitle">Cruzando foco, rotina, frequência, recuperação e objetivo.</p><button class="btn" style="margin-top:26px" onclick="goTo('home')">Ver resultado</button></div></div>
+      </section>
+
+      <section class="screen" id="home">
+        <div class="top"><div><div class="brand">TAC</div><div class="label" style="margin-top:6px">Plano ativo</div></div><button class="theme" onclick="toggleTheme()">Tema</button></div>
+        <div class="glass hero"><div class="hero-mark">TAC</div><div class="inner"><div><div class="label">Hoje</div><h2 style="margin-top:14px">Força inferior + mobilidade.</h2><p class="subtitle">45–60 min · carga moderada</p></div><div class="progress"><span></span></div></div></div>
+        <div class="metric-grid"><div class="metric"><div class="label">Treinos</div><div class="value">4/5</div></div><div class="metric"><div class="label">Água</div><div class="value">2.1L</div></div><div class="metric"><div class="label">Proteína</div><div class="value">72%</div></div><div class="metric"><div class="label">Sono</div><div class="value">7h</div></div></div>
+        <div class="section">Próxima ação</div><div class="list"><div class="list-item" onclick="goTo('todayTraining')"><strong>Treino do dia</strong><span>Abrir</span></div><div class="list-item" onclick="goTo('nutritionChecklist')"><strong>Checklist nutrição</strong><span>Ver</span></div><div class="list-item" onclick="goTo('history')"><strong>Histórico</strong><span>7 dias</span></div></div>
+      </section>
+
+      <section class="screen" id="training">
+        <div class="top"><div class="brand">Treino IA</div><span class="chip">Semana</span></div><h2>Plano semanal.</h2><p class="subtitle">Estrutura gerada com base no foco e ajustável pelo feedback.</p>
+        <div class="list" style="margin-top:24px"><div class="list-item" onclick="goTo('todayTraining')"><strong>Seg</strong><span>Força inferior</span></div><div class="list-item"><strong>Ter</strong><span>Jiu-Jitsu técnico</span></div><div class="list-item"><strong>Qua</strong><span>Posterior + core</span></div><div class="list-item"><strong>Qui</strong><span>Condicionamento</span></div><div class="list-item"><strong>Sex</strong><span>Mobilidade</span></div></div>
+      </section>
+
+      <section class="screen" id="todayTraining">
+        <div class="top"><div class="brand">Treino</div><span class="chip">Hoje</span></div><h2>Força inferior + mobilidade.</h2><p class="subtitle">45–60 min · 4 blocos · 18 séries</p>
+        <div class="glass hero"><div class="inner"><div style="display:flex;justify-content:space-between;gap:16px"><div><div class="label">Sessão de hoje</div><h2 style="margin-top:14px;font-size:30px">Performance base.</h2><p class="subtitle">Carga moderada · RPE alvo 7</p></div><div class="ring-wrap"><div class="ring" id="heroRing" style="--progress:0"></div><div class="ring-text"><div><strong id="heroPercent">0%</strong><span>feito</span></div></div></div></div><div class="metric-grid" style="margin-top:18px"><div class="metric"><div class="label">Foco</div><div class="value">BJJ</div></div><div class="metric"><div class="label">RPE</div><div class="value">7</div></div></div></div></div>
+        <div class="section">Blocos</div>
+        <template id="workoutBlocksTemplate"></template>
+        <div id="workoutBlocks"></div>
+      </section>
+
+      <section class="screen" id="nutrition">
+        <div class="top"><div class="brand">Nutrição IA</div><span class="chip">Base</span></div><h2>Avaliação nutricional.</h2><p class="subtitle">Base alimentar para energia, rotina e recuperação.</p>
+        <div class="section">Plano base</div><div class="glass"><div class="inner"><div class="label">Sugestão IA</div><h2 style="font-size:28px;margin-top:12px">Proteína alta, hidratação e refeições previsíveis.</h2><p class="subtitle">Ajuste inicial com foco em performance e consistência semanal.</p></div></div>
+        <div class="section">Metas do dia</div><div class="list"><div class="list-item" onclick="goTo('nutritionChecklist')"><strong>Proteína</strong><span>72%</span></div><div class="list-item"><strong>Água</strong><span>2.1L / 3L</span></div><div class="list-item"><strong>Refeições</strong><span>3 / 5</span></div></div>
+      </section>
+
+      <section class="screen" id="nutritionChecklist"><div class="top"><div class="brand">Checklist</div><span class="chip">Hoje</span></div><h2>Nutrição do dia.</h2><div class="list" style="margin-top:24px"><div class="list-item"><strong>✓</strong><span>Café com proteína</span></div><div class="list-item"><strong>✓</strong><span>Almoço completo</span></div><div class="list-item"><strong>—</strong><span>Pré-treino</span></div><div class="list-item"><strong>—</strong><span>Jantar</span></div><div class="list-item"><strong>2.1L</strong><span>Água registrada</span></div></div></section>
+
+      <section class="screen" id="shop"><div class="top"><div class="brand">Shop</div><span class="chip">Drop 01</span></div><h2>Apparel concept.</h2><p class="subtitle">Loja editorial com peças da identidade TAC.</p><div class="product-grid"><div class="product" onclick="goTo('product')"><div class="product-img">Dry Fit</div><div><div class="option-title">Training Tee</div><div class="option-small">Performance</div></div></div><div class="product" onclick="goTo('product')"><div class="product-img">TAC</div><div><div class="option-title">Oversized</div><div class="option-small">Box Tee</div></div></div><div class="product"><div class="product-img">Cap</div><div><div class="option-title">Five Panel</div><div class="option-small">Headwear</div></div></div><div class="product"><div class="product-img">Club</div><div><div class="option-title">Graphic Tee</div><div class="option-small">Collection</div></div></div></div></section>
+
+      <section class="screen" id="product"><div class="top"><div class="brand">Produto</div><span class="chip">Drop 01</span></div><div class="glass hero" style="min-height:320px"><div class="hero-mark">TAC</div><div class="inner"><div><div class="label">Oversized Tee</div><h2 style="margin-top:14px">The Athletic Club.</h2></div></div></div><div class="section">Detalhes</div><div class="list"><div class="list-item"><strong>Tecido</strong><span>Algodão pesado</span></div><div class="list-item"><strong>Modelagem</strong><span>Oversized</span></div><div class="list-item"><strong>Tamanho</strong><span>P / M / G / GG</span></div><div class="list-item"><strong>Status</strong><span>Wishlist</span></div></div></section>
+
+      <section class="screen" id="profile"><div class="top"><div class="brand">Perfil</div><button class="theme" onclick="toggleTheme()">Tema</button></div><div class="profile-head"><div class="avatar">JM</div><div><h2 style="font-size:28px">João Martins</h2><div class="label" style="margin-top:6px">Club Member</div></div></div><div class="section">Configurações</div><div class="list"><div class="list-item"><strong>Foco</strong><span>Jiu-Jitsu</span></div><div class="list-item"><strong>Objetivo</strong><span>Performance</span></div><div class="list-item"><strong>Restrições</strong><span>Editar</span></div><div class="list-item"><strong>Preferências</strong><span>Treino / nutrição</span></div><div class="list-item"><strong>Privacidade</strong><span>Dados e IA</span></div><div class="list-item"><strong>Exportar dados</strong><span>JSON</span></div><div class="list-item"><strong>Resetar plano</strong><span>Recomeçar</span></div></div><button class="btn secondary" style="margin-top:18px" onclick="goTo('login')">Sair</button></section>
+
+      <section class="screen" id="history"><div class="top"><div class="brand">Histórico</div><span class="chip">7 dias</span></div><h2>Execução recente.</h2><div class="list" style="margin-top:24px"><div class="list-item"><strong>Seg</strong><span>Treino completo</span></div><div class="list-item"><strong>Ter</strong><span>Jiu-Jitsu registrado</span></div><div class="list-item"><strong>Qua</strong><span>Checklist parcial</span></div><div class="list-item"><strong>Qui</strong><span>Descanso</span></div></div></section>
+
+      <nav class="nav"><button class="active" onclick="goTo('home',this)">Home</button><button onclick="goTo('training',this)">Treino</button><button onclick="goTo('nutrition',this)">Nutrição</button><button onclick="goTo('shop',this)">Shop</button><button onclick="goTo('profile',this)">Perfil</button></nav>
+    </div>
+  </main>
+
+  <div class="bottom-workout"><div><strong id="progressText">0 de 18 séries concluídas</strong><div class="bar"><span id="progressBar"></span></div></div><div class="grid-2"><button class="btn secondary" onclick="saveWorkout()">Salvar</button><button class="btn" onclick="finishWorkout()">Finalizar</button></div></div>
+  <div class="toast" id="toast">Registro salvo.</div>
+  <script src="script.js"></script>
+</body>
+</html>
